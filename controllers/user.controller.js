@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 
-import User from "../models/userModel.js";
+import User from "../models/user.model.js";
 import { asyncWrapper } from "../utils/asyncWrapper.js";
 import customError from "../utils/customError.js";
 import { generateJWT } from "./../utils/generateJWT.js";
@@ -41,6 +41,7 @@ const signup = asyncWrapper(async (req, res, next) => {
   });
   newUser.token = token;
 
+  newUser.password = undefined;
   res.json({ status: 201, data: { newUser } });
 });
 
@@ -56,13 +57,20 @@ const login = asyncWrapper(async (req, res, next) => {
   const matchedPassword = await bcrypt.compare(password, user.password);
 
   if (!matchedPassword)
-    return next(customError.create("the password is incorrect", 500, "error"));
+    return next(customError.create("the password is incorrect", 400, "fail"));
 
   // logged in successfully
   const token = generateJWT({
     id: user._id,
     email: user.email,
     role: user.role,
+  });
+
+  res.cookie("jwt", token, {
+    httpOnly: true,
+    maxAge: 1 * 24 * 60 * 60 * 1000,
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: process.env.NODE_ENV === "production",
   });
 
   return res.json({ status: "success", data: { token } });

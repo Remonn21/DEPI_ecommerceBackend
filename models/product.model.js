@@ -1,3 +1,5 @@
+import mongoose, { Schema } from "mongoose";
+
 const productSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -27,6 +29,10 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  details: {
+    type: String,
+    required: true,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -40,7 +46,7 @@ const productSchema = new mongoose.Schema({
 
   images: [
     {
-      type: "string",
+      type: String,
       required: true,
     },
   ],
@@ -67,7 +73,10 @@ const productSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
-
+  soldUnits: {
+    type: Number,
+    default: 0,
+  },
   isActive: {
     type: Boolean,
     default: true,
@@ -75,6 +84,8 @@ const productSchema = new mongoose.Schema({
   tags: [String],
 });
 
+productSchema.index({ price: -1, soldUnits: -1, category: 1 });
+
 const Product = mongoose.model("Product", productSchema);
 
-export default User;
+export default Product;
