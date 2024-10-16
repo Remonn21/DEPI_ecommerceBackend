@@ -2,7 +2,7 @@ import Review from "../models/review.model.js";
 import { asyncWrapper } from "../utils/asyncWrapper.js";
 
 export const createReview = asyncWrapper(async (req, res) => {
-  const { product_id, user_id, rating, comment } = req.body;
+  const { product_id, rating, comment } = req.body;
 
   // Check if the user has already reviewed the product
   const existingReview = await Review.findOne({ product_id, user_id });
@@ -15,7 +15,7 @@ export const createReview = asyncWrapper(async (req, res) => {
 
   const newReview = await Review.create({
     product_id,
-    user_id,
+    user: req.currentUser,
     rating,
     comment,
   });

@@ -1,10 +1,10 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import "dotenv/config";
 
 import { connectToDb } from "./utils/dbConnect.js";
 import errorHandler from "./middleware/errorHandler.js";
-
 import routes from "./routes/index.js";
 
 const app = express();
@@ -17,6 +17,7 @@ app.use(
 );
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(cookieParser());
 
 app.use("/health", (req, res, next) => {
   res.send("working");
