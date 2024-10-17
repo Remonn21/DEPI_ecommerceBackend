@@ -5,7 +5,7 @@ import Order from "./../models/order.model.js";
 
 export const createOrder = asyncWrapper(async (req, res, next) => {
   const { shippingAddress, paymentMethod, products } = req.body;
-
+  console.log("working");
   const productsId = products.map((product) => product._id);
 
   const productsDoc = await Product.find({ _id: { $in: productsId } });

@@ -1,5 +1,6 @@
 import cloudinary from "../config/cloudinary.js";
 import Category from "../models/category.model.js";
+import Order from "../models/order.model.js";
 import Product from "../models/product.model.js";
 import { asyncWrapper } from "../utils/asyncWrapper.js";
 import customError from "../utils/customError.js";
@@ -43,7 +44,6 @@ export const createProduct = asyncWrapper(async (req, res, next) => {
     discountExpiry,
     rating,
     isActive,
-    seller_id,
     soldUnits,
     details,
     tags,
@@ -86,9 +86,8 @@ export const createProduct = asyncWrapper(async (req, res, next) => {
         );
       }
     }
-
     const product = await Product.create({
-      seller: seller_id, // check
+      seller: req.currentUser.id,
       name,
       brand,
       quantity,
@@ -230,7 +229,6 @@ export const deleteImages = async (imageUrls) => {
 
 export const getAllProducts = asyncWrapper(async (req, res, next) => {
   const searchQuery = req.query.searchQuery || "";
-  console.log(searchQuery);
   const sortOption = req.query.sortOption || "soldUnits";
   let sortOrder = req.query.sortOrder || "desc";
   const category_id = req.query.category;
@@ -276,15 +274,23 @@ export const getAllProducts = asyncWrapper(async (req, res, next) => {
 
 export const getProduct = asyncWrapper(async (req, res, next) => {
   const { id } = req.params;
-  const product = await Product.findById(id);
 
+  const [product, orderDoc] = await Promise.all([
+    Product.findById(id).populate("reviews").lean(),
+    req.currentUser
+      ? Order.countDocuments({
+          user: req.currentUser.id,
+          products: { $elemMatch: { product: id } },
+        })
+      : undefined,
+  ]);
   if (!product) {
     return next(customError.create("Product not found", 404, "not found"));
   }
   res.status(200).json({
     status: 200,
     data: {
-      product,
+      product: { ...product, orderedByUser: !!orderDoc },
     },
   });
 });

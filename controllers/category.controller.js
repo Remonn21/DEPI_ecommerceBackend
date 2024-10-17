@@ -160,7 +160,6 @@ export const getCategory = asyncWrapper(async (req, res) => {
 
 export const deleteCategory = asyncWrapper(async (req, res) => {
   const { id } = req.params;
-  console.log("Testing", category);
   const category = await Category.findById(id);
   if (!category) {
     return next(customError.create("category are not found", 404, "not found"));

@@ -1,6 +1,23 @@
 import customError from "../utils/customError.js";
 import jwt from "jsonwebtoken";
 
+export const optionalAuth = (req, res, next) => {
+  const token = req.cookies.jwt;
+
+  if (!token) {
+    return next();
+  }
+
+  try {
+    const currentUser = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    req.currentUser = currentUser;
+  } catch (err) {
+    req.currentUser = null;
+  }
+
+  next();
+};
+
 export const auth = (req, res, next) => {
   //   const authHeader = req.headers["Authorization"] || req.headers["authorization"];
 

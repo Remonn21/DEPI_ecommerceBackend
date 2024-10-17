@@ -33,9 +33,9 @@ const signup = asyncWrapper(async (req, res, next) => {
     password: hashedPass,
     role,
   });
-
   const token = generateJWT({
     id: newUser._id,
+    name: newUser.name,
     email: newUser.email,
     role: newUser.role,
   });
@@ -63,6 +63,7 @@ const login = asyncWrapper(async (req, res, next) => {
   const token = generateJWT({
     id: user._id,
     email: user.email,
+    name: user.name,
     role: user.role,
   });
 

@@ -1,26 +1,42 @@
+import Product from "../models/product.model.js";
 import Review from "../models/review.model.js";
 import { asyncWrapper } from "../utils/asyncWrapper.js";
+import customError from "../utils/customError.js";
 
-export const createReview = asyncWrapper(async (req, res) => {
+export const createReview = asyncWrapper(async (req, res, next) => {
   const { product_id, rating, comment } = req.body;
+  const user_id = req.currentUser.id;
 
-  // Check if the user has already reviewed the product
-  const existingReview = await Review.findOne({ product_id, user_id });
+  const existingReview = await Review.findOne({ product: product_id, user: user_id });
   if (existingReview) {
-    return res.json({
-      status: 400,
-      data: { message: "You have already reviewed this product." },
-    });
+    return next(
+      customError.create("You have already reviewed this product.", 400, "conflict")
+    );
   }
 
   const newReview = await Review.create({
-    product_id,
-    user: req.currentUser,
+    product: product_id,
+    user: user_id,
+    username: req.currentUser.name,
     rating,
     comment,
   });
 
-  res.json({ status: 201, data: newReview });
+  await Product.findByIdAndUpdate(product_id, {
+    $push: { reviews: newReview._id },
+  });
+
+  const product = await Product.findById(product_id).populate("reviews");
+
+  const totalRating = product.reviews.reduce((acc, review) => acc + review.rating, 0);
+  const avgRating = totalRating / product.reviews.length;
+
+  await Product.findByIdAndUpdate(product_id, { rating: avgRating });
+
+  res.status(201).json({
+    status: 201,
+    data: { review: newReview },
+  });
 });
 
 export const getProductReviews = asyncWrapper(async (req, res) => {
