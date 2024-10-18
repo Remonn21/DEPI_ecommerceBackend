@@ -279,8 +279,11 @@ export const getAllProducts = asyncWrapper(async (req, res, next) => {
 export const getProduct = asyncWrapper(async (req, res, next) => {
   const { id } = req.params;
 
-  const [product, orderDoc] = await Promise.all([
+  const [product, relatedProducts, orderDoc] = await Promise.all([
     Product.findById(id).populate("reviews").lean(),
+    Product.find({ _id: { $ne: id } })
+      .limit(4)
+      .lean(),
     req.currentUser
       ? Order.countDocuments({
           user: req.currentUser.id,
@@ -295,6 +298,7 @@ export const getProduct = asyncWrapper(async (req, res, next) => {
     status: 200,
     data: {
       product: { ...product, orderedByUser: !!orderDoc },
+      relatedProducts,
     },
   });
 });

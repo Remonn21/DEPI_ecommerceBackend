@@ -74,7 +74,16 @@ const login = asyncWrapper(async (req, res, next) => {
     secure: process.env.NODE_ENV === "production",
   });
 
-  return res.json({ status: "success", data: { token } });
+  return res.json({
+    status: "success",
+    data: {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+    },
+  });
 });
 
 export default { getUsers, signup, login };
