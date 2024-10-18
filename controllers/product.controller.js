@@ -231,7 +231,7 @@ export const getAllProducts = asyncWrapper(async (req, res, next) => {
   const searchQuery = req.query.searchQuery || "";
   const sortOption = req.query.sortOption || "soldUnits";
   let sortOrder = req.query.sortOrder || "desc";
-  const category_id = req.query.category;
+  const category = req.query.category;
   const subCategory_id = req.query.subCategory;
 
   const limit = parseInt(req.query.limit) || 10;
@@ -243,12 +243,16 @@ export const getAllProducts = asyncWrapper(async (req, res, next) => {
   if (searchQuery) {
     query["name"] = new RegExp(searchQuery, "i");
   }
-  if (category_id) {
-    query["category"] = category;
+  if (category) {
+    const categoryReg = new RegExp(category, "i");
+    const categoryDoc = await Category.findOne({ name: categoryReg }).select("name");
+    if (!categoryDoc)
+      return next(customError.create("Category not found", 404, "not found"));
+    query["category"] = categoryDoc.id;
   }
-  if (subCategory_id) {
-    query["category"] = category;
-  }
+  // if (subCategory_id) {
+  //   query["category"] = category;
+  // }
 
   sortOrder = sortOrder === "desc" ? -1 : 1;
 
