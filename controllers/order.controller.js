@@ -1,11 +1,34 @@
+import axios from "axios";
 import Product from "../models/product.model.js";
 import { asyncWrapper } from "../utils/asyncWrapper.js";
 import customError from "../utils/customError.js";
 import Order from "./../models/order.model.js";
 
 export const createOrder = asyncWrapper(async (req, res, next) => {
-  const { shippingAddress, paymentMethod, products } = req.body;
-  console.log("working");
+  const { shippingAddress, paymentMethod, products, authToken } = req.body;
+
+  try {
+    const orderResponse = await axios.post(
+      `${process.env.PAYMOB_API_BASE}/ecommerce/orders`,
+      {
+        authToken: authToken,
+        delivery_needed: false,
+        amount_cents: 1000,
+        currency: "EGP",
+        items: [],
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      }
+    );
+    return res.json(orderResponse.data);
+  } catch (error) {
+    // console.log("error creating order", error);
+    return res.status(500).json({ error: error });
+  }
+
   const productsId = products.map((product) => product._id);
 
   const productsDoc = await Product.find({ _id: { $in: productsId } });
