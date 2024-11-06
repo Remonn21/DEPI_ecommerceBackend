@@ -42,6 +42,14 @@ const signup = asyncWrapper(async (req, res, next) => {
   newUser.token = token;
 
   newUser.password = undefined;
+
+  res.cookie("jwt", token, {
+    httpOnly: true,
+    maxAge: 1 * 24 * 60 * 60 * 1000,
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: process.env.NODE_ENV === "production",
+  });
+
   res.json({ status: 201, data: { newUser } });
 });
 

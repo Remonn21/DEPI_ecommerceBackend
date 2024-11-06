@@ -65,7 +65,9 @@ export const createOrder = asyncWrapper(async (req, res, next) => {
 });
 
 export const getUserOrders = asyncWrapper(async (req, res) => {
-  const orders = await Order.find({ user_id: req.params.userId });
+  const orders = await Order.find({ user: req.params.userId })
+    .populate({ path: "products.product", select: "name price images" })
+    .limit(20);
 
   res.json({ status: 200, data: orders });
 });
