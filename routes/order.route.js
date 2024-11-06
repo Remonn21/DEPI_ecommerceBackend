@@ -2,6 +2,7 @@ import express from "express";
 import { createOrder, getUserOrders } from "../controllers/order.controller.js";
 import { auth } from "../middleware/auth.js";
 import axios from "axios";
+import Order from "../models/order.model.js";
 
 const router = express.Router();
 
@@ -11,23 +12,21 @@ router.post("/webhook/paymob", async (req, res) => {
   try {
     const eventData = req.body;
 
-    // Check for the transaction status in the webhook payload
     if (eventData && eventData.obj && eventData.obj.success) {
       // Payment was successful
       const transactionData = eventData.obj;
 
-      // Extract necessary details from transactionData
       const orderId = transactionData.order_id;
       const amountPaid = transactionData.amount_cents;
-      const paymentMethod = transactionData.payment_method;
+      //   const paymentMethod = transactionData.payment_method;
 
-      // Perform actions after successful payment
-      // e.g., updating order status in your database
-      //   await Order.updateOne({ _id: orderId }, { status: "Paid", amountPaid });
+      console.log(orderId, amountPaid);
+
+      await Order.updateOne({ _id: orderId }, { status: "paid", amountPaid });
 
       res.status(200).send("Webhook received and processed successfully");
     } else {
-      // Handle other statuses or errors here
+      // Handle other statuses or errors
       console.log("Payment failed or event data invalid", eventData);
       res.status(400).send("Event data invalid or payment failed");
     }
@@ -51,7 +50,17 @@ router.post("/paymob/authenticate", async (req, res) => {
 
 router.post("/paymob/payment-key", async (req, res) => {
   const { authToken, orderId, amountCents } = req.body;
-  console.log("working", authToken);
+
+  const user = req.currentUser;
+
+  const order = await Order.findOne({ _id: orderId, user: user.id });
+  if (!order) {
+    return res
+      .status(400)
+      .json({ error: "Invalid order ID or the order doesn't belong to you" });
+  }
+
+  console.log("auth Data: ", user);
   try {
     const paymentKeyResponse = await axios.post(
       `${process.env.PAYMOB_API_BASE}/acceptance/payment_keys`,
@@ -59,7 +68,7 @@ router.post("/paymob/payment-key", async (req, res) => {
         auth_token: authToken,
         amount_cents: amountCents,
         expiration: 3600,
-        order_id: orderId,
+        // order_id: order._id,
         billing_data: {
           apartment: "NA",
           email: "example@example.com",
